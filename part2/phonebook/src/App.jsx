@@ -1,27 +1,40 @@
 import { use, useState, useEffect } from 'react'
+
+// Komponentit
 import Contacts from './components/Contacts'
 import Filter from './components/Filter'
 import PersonForm from './components/PersonForm'
+import Notification from './components/Notification'
+
+// Servicet
 import personServive from './services/persons'
 
 const App = () => {
 
+  // Sovelluksen tilat
   const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [search, setSearch] = useState('')
+  const [notification, setNotification] = useState('')
+  const [errorNotification, setErrorNorification] = useState('')
 
   useEffect(() => {
+    fetchPersons()
+  }, [])
+
+  const fetchPersons = () => {
     personServive.getAll().then(initialPersons => {
       setPersons(initialPersons)
       console.log("Persons fetched from server")
     }).catch(error => {
       console.log("Error: ", error);
     })
-  }, [])
+  }
   
   const addPerson = (event) => {
     event.preventDefault()
+    if (newName === "" || newNumber === "") return
     setNewName("")
     setNewNumber("")
 
@@ -40,18 +53,23 @@ const App = () => {
         .update(oldPerson.id, newPerson)
         .then(initialPerson => {
           setPersons(persons.map(person => person.id !== initialPerson.id ? person : initialPerson))
+          notificationSetter(`Updated ${newPerson.name}`)
         })      
         .catch(error => {
-          console.log("Error: ", error);
+          console.log("Error: ", error)
+          notificationSetter(`Error with updating ${newPerson.name}`, true)
+          fetchPersons()
       })
     } else {
       personServive
         .create(newPerson)
         .then(initialPerson => {
           setPersons(persons.concat(initialPerson))
+          notificationSetter(`Added ${newPerson.name}`)
         })
         .catch(error => {
           console.log("Error: ", error);
+          notificationSetter(`Error with adding ${newPerson.name}`, true)
         })
     }
   }
@@ -64,12 +82,16 @@ const App = () => {
 
     personServive
       .deletePerson(id)
+      .then(() => {
+        setPersons(persons.filter(person => id !== person.id))
+        notificationSetter(`Deleted ${personToDelete.name}`)
+        console.log(`${personToDelete.name} deleted succesfully`)
+      })
       .catch(error => {
         console.log("Error: ", error);
+        notificationSetter(`${personToDelete.name} has already been deleted from the server`, true)
+        fetchPersons()
       })
-
-    setPersons(persons.filter(person => id !== person.id))
-    console.log(`${personToDelete.name} deleted succesfully`)
     }
 
   const handleNameChange = (event) => {
@@ -84,9 +106,26 @@ const App = () => {
     setSearch(event.target.value)
   }
 
+  const notificationSetter = (message, error = false) => {
+    // Jos error on false, renderöidään normaali notification, muutoin error viesti
+    if (!error) {
+      setNotification(message)
+      setTimeout(() => {
+        setNotification(null)     
+      }, 5000)
+    } 
+    else {
+      setErrorNorification(message)
+      setTimeout(() => {
+        setErrorNorification(null)
+      },5000)
+    }
+  }
+
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification notification={notification} errorNotification={errorNotification}/>
       <Filter search={search} searchChange={searchChange}/>
       <h2>add a new</h2>
       <PersonForm addPerson={addPerson} newName={newName} handleNameChange={handleNameChange} newNumber={newNumber} handleNumberChange={handleNumberChange}/>
