@@ -1,8 +1,9 @@
 const express = require('express')
 const app = express() 
 var morgan = require('morgan')
+const cors = require('cors')
 app.use(express.json())
-
+app.use(cors())
 morgan.token('body', (req) => {
     return JSON.stringify(req.body)
 })
@@ -80,8 +81,8 @@ app.delete('/api/persons/:id', (request, response) => {
     response.status(204).end()
 })
 
-const port = 3001
-app.listen(port, () => {
+const PORT = process.env.PORT || 3001
+app.listen(PORT, () => {
     console.log(`Server running on port ${port}`);
     
 })
