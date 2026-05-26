@@ -57,7 +57,7 @@ const App = () => {
         })      
         .catch(error => {
           console.log("Error: ", error)
-          notificationSetter(`Error with updating ${newPerson.name}`, true)
+          notificationSetter(error.response.data.error, true)
           fetchPersons()
       })
     } else {
@@ -69,7 +69,7 @@ const App = () => {
         })
         .catch(error => {
           console.log("Error: ", error);
-          notificationSetter(`Error with adding ${newPerson.name}`, true)
+          notificationSetter(error.response.data.error, true)
         })
     }
   }
