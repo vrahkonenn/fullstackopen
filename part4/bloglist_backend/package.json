@@ -3,14 +3,19 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "node --watch index.js",
-    "test": "node --test" 
+    "start": "cross-env NODE_ENV=production node index.js",
+    "dev": "cross-env NODE_ENV=development node --watch index.js",
+    "test": "cross-env NODE_ENV=test node --test"
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
     "config": "^4.4.1",
+    "cross-env": "^10.1.0",
     "dotenv": "^17.4.2"
+  },
+  "devDependencies": {
+    "supertest": "^7.2.2"
   }
 }
