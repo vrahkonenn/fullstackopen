@@ -1,6 +1,7 @@
 const blogRouter = require('express').Router()
 const { ReturnDocument } = require('mongodb')
 const Blog = require('../models/blog')
+const User = require('../models/user')
 
 blogRouter.get('/', async (request, response) => {
   const blogs = await Blog.find({})
@@ -13,13 +14,20 @@ blogRouter.post('/', async (request, response) => {
 
   if (!body.url || !body.title) return response.status(400).json({error: "Request must contain title and url"})
 
+  const user = User.findById(body.userId)
+
+  if (!user) return response.status(400).json({ error: 'userId missing or not valid' })
   const blog = new Blog({
     author: body.author,
     title: body.title,
-    likes: body.likes || 0
+    likes: body.likes || 0,
+    user: user._id
   })
 
-  const result = await blog.save()
+  const savedBlog = await blog.save()
+  user.blogs = user.blogs.concat(savedBlog._id)
+  await user.save()
+  
   response.status(201).json(result)
 })
 

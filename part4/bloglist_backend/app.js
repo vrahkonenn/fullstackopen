@@ -4,6 +4,7 @@ const config = require('./utils/config')
 const { info, error } = require('./utils/logger')
 const app = express()
 const blogRouter = require('./controllers/blogs')
+const userRouter = require('./controllers/user')
 
 info('Connecting to: ', config.mongoUrl)
 
@@ -14,5 +15,6 @@ mongoose
 
 app.use(express.json())
 app.use('/api/blogs', blogRouter)
+app.use('/api/users', userRouter)
 
 module.exports = app
