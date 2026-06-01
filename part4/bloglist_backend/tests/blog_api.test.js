@@ -3,15 +3,23 @@ const mongoose = require('mongoose')
 const supertest = require('supertest')
 const app = require('../app')
 const assert = require('node:assert')
-const { initialBlogs, blogsInDb } = require('./test_helper')
+const { initialBlogs, testUser, blogsInDb } = require('./test_helper')
 const Blog = require('../models/blog')
-const { log } = require('node:console')
+const User = require('../models/user')
 
 const api = supertest(app)
+let user
 
 beforeEach(async () => {
     await Blog.deleteMany({})
+    await User.deleteMany({})
     await Blog.insertMany(initialBlogs)
+    
+    const response = await api
+        .post('/api/users')
+        .send(testUser)
+    
+    user = response.body
 })
 
 describe('Blog api tests', () => {
@@ -36,12 +44,11 @@ describe('Blog api tests', () => {
 
     test('new blog can be added', async () => {
         const newBlog = {
-            _id: "5a422bc61b54a676234d17fc",
             title: "Type wars",
             author: "Robert C. Martin",
             url: "http://blog.cleancoder.com/uncle-bob/2016/05/01/TypeWars.html",
             likes: 2,
-            __v: 0
+            userId: user.id
           }  
 
         await api
@@ -57,11 +64,10 @@ describe('Blog api tests', () => {
 
     test('If likes not given when adding a blog, likes are set 0', async () => {
           const newBlog = {
-            _id: "5a422bc61b54a676234d1745466fc",
             title: "New Blog",
             author: "Some dude",
             url: "blog.com",
-            __v: 0
+            userId: user.id
           }  
 
         const response = await api

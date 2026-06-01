@@ -4,7 +4,7 @@ const Blog = require('../models/blog')
 const User = require('../models/user')
 
 blogRouter.get('/', async (request, response) => {
-  const blogs = await Blog.find({})
+  const blogs = await Blog.find({}).populate('user', { username: 1, name: 1})
   response.json(blogs)
 })
 
@@ -14,12 +14,14 @@ blogRouter.post('/', async (request, response) => {
 
   if (!body.url || !body.title) return response.status(400).json({error: "Request must contain title and url"})
 
-  const user = User.findById(body.userId)
+  const user = await User.findById(body.userId)
 
   if (!user) return response.status(400).json({ error: 'userId missing or not valid' })
+
   const blog = new Blog({
     author: body.author,
     title: body.title,
+    url: body.url,
     likes: body.likes || 0,
     user: user._id
   })
@@ -28,7 +30,7 @@ blogRouter.post('/', async (request, response) => {
   user.blogs = user.blogs.concat(savedBlog._id)
   await user.save()
   
-  response.status(201).json(result)
+  response.status(201).json(savedBlog)
 })
 
 blogRouter.delete('/:id', async (request, response) => {
