@@ -2,6 +2,7 @@ const blogRouter = require('express').Router()
 const { ReturnDocument } = require('mongodb')
 const Blog = require('../models/blog')
 const User = require('../models/user')
+const jwt = require('jsonwebtoken')
 
 blogRouter.get('/', async (request, response) => {
   const blogs = await Blog.find({}).populate('user', { username: 1, name: 1})
@@ -9,21 +10,25 @@ blogRouter.get('/', async (request, response) => {
 })
 
 blogRouter.post('/', async (request, response) => {
-
   body = request.body
 
-  if (!body.url || !body.title) return response.status(400).json({error: "Request must contain title and url"})
+  const decodedToken = jwt.verify(request.token, process.env.SECRET)
 
-  const user = await User.findById(body.userId)
+  if (!decodedToken.id) {
+        return response.status(401).json({ error: 'Token invalid or missing'})
+  }
+  const user = await User.findById(decodedToken.id)
 
   if (!user) return response.status(400).json({ error: 'userId missing or not valid' })
+
+  if (!body.url || !body.title) return response.status(400).json({error: "Request must contain title and url"})
 
   const blog = new Blog({
     author: body.author,
     title: body.title,
     url: body.url,
     likes: body.likes || 0,
-    user: user._id
+    user: user.id
   })
 
   const savedBlog = await blog.save()
