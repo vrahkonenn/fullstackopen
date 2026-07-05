@@ -3,13 +3,15 @@ const { ReturnDocument } = require('mongodb')
 const Blog = require('../models/blog')
 const User = require('../models/user')
 const jwt = require('jsonwebtoken')
+const blog = require('../models/blog')
+const middleware = require('../utils/middleware')
 
 blogRouter.get('/', async (request, response) => {
   const blogs = await Blog.find({}).populate('user', { username: 1, name: 1})
   response.json(blogs)
 })
 
-blogRouter.post('/', async (request, response) => {
+blogRouter.post('/', middleware.userExtractor, async (request, response) => {
   body = request.body
 
   const decodedToken = jwt.verify(request.token, process.env.SECRET)
@@ -17,7 +19,7 @@ blogRouter.post('/', async (request, response) => {
   if (!decodedToken.id) {
         return response.status(401).json({ error: 'Token invalid or missing'})
   }
-  const user = await User.findById(decodedToken.id)
+  const user = request.user
 
   if (!user) return response.status(400).json({ error: 'userId missing or not valid' })
 
@@ -38,11 +40,26 @@ blogRouter.post('/', async (request, response) => {
   response.status(201).json(savedBlog)
 })
 
-blogRouter.delete('/:id', async (request, response) => {
+blogRouter.delete('/:id', middleware.userExtractor, async (request, response) => {
   const id = request.params.id 
+  const decodedToken = jwt.verify(request.token, process.env.SECRET)
 
-  const result = await Blog.findByIdAndDelete(id)
-  response.status(201).json(result)
+  if (!decodedToken.id) {
+        return response.status(401).json({ error: 'Token invalid or missing'})
+  }
+
+  const blogToDelete = await Blog.findById(id)
+
+  if (!blogToDelete) {
+    return response.status(401).json({ error: 'blog not found'})
+  }
+  
+  if (!(blogToDelete.user.toString() === decodedToken.id.toString())) {
+    return response.status(401).json({ error: "This user can't remove this blog"})
+  }
+  await Blog.findByIdAndDelete(id)  
+  console.log(`${decodedToken.username} deleted ${blogToDelete.title}`)
+  response.status(201).json({ message: 'deletion succesful'})
 })
 
 blogRouter.put('/:id', async (request, response) => {

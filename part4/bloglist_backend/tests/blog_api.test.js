@@ -9,17 +9,35 @@ const User = require('../models/user')
 
 const api = supertest(app)
 let user
+let token = null
 
 beforeEach(async () => {
     await Blog.deleteMany({})
     await User.deleteMany({})
-    await Blog.insertMany(initialBlogs)
     
-    const response = await api
-        .post('/api/users')
-        .send(testUser)
+    await api
+    .post('/api/users')
+    .send(testUser)
     
-    user = response.body
+    user = await User.findOne({ username: 'testuser' })
+
+    for (const blog of initialBlogs) {
+        const blogObject = new Blog({
+            ...blog,
+            user: user._id
+        })
+
+        await blogObject.save()
+        user.blogs = user.blogs.concat(blogObject._id)
+    }
+
+    await user.save()
+    
+    const res = await api
+    .post('/api/login')
+    .send({username: "testuser", password: "testpass"})
+    
+    token = res.body.token
 })
 
 describe('Blog api tests', () => {
@@ -49,11 +67,12 @@ describe('Blog api tests', () => {
             url: "http://blog.cleancoder.com/uncle-bob/2016/05/01/TypeWars.html",
             likes: 2,
             userId: user.id
-          }  
+        }  
 
         await api
             .post('/api/blogs')
             .send(newBlog)
+            .set({ Authorization: `Bearer ${token}`})
             .expect(201)
             .expect('Content-Type', /application\/json/)
 
@@ -61,6 +80,27 @@ describe('Blog api tests', () => {
 
         assert.strictEqual(blogsAtEnd.length, initialBlogs.length+1)
     })
+
+    test("New blog can't be added without a token", async () => {
+        const newBlog = {
+            title: "Type wars",
+            author: "Robert C. Martin",
+            url: "http://blog.cleancoder.com/uncle-bob/2016/05/01/TypeWars.html",
+            likes: 2,
+            userId: user.id
+        }  
+        
+        await api
+            .post('/api/blogs')
+            .send(newBlog)
+            .expect(401)
+            .expect('Content-Type', /application\/json/)
+        
+        const blogsAtEnd = await blogsInDb()        
+
+        assert.strictEqual(blogsAtEnd.length, initialBlogs.length)
+          
+        })
 
     test('If likes not given when adding a blog, likes are set 0', async () => {
           const newBlog = {
@@ -73,6 +113,7 @@ describe('Blog api tests', () => {
         const response = await api
             .post('/api/blogs')
             .send(newBlog)
+            .set({ Authorization: `Bearer ${token}`})
             .expect(201)
             .expect('Content-Type', /application\/json/)
         
@@ -92,6 +133,7 @@ describe('Blog api tests', () => {
         let response = await api
             .post('/api/blogs')
             .send(newBlog)
+            .set({ Authorization: `Bearer ${token}`})
             .expect(400)
             .expect('Content-Type', /application\/json/)
 
@@ -106,6 +148,7 @@ describe('Blog api tests', () => {
         response = await api
             .post('/api/blogs')
             .send(newBlog)
+            .set({ Authorization: `Bearer ${token}`})
             .expect(400)
             .expect('Content-Type', /application\/json/)
     })
@@ -115,6 +158,7 @@ describe('Blog api tests', () => {
 
         const response = await api
             .delete(`/api/blogs/${id}`)
+            .set({ Authorization: `Bearer ${token}`})
             .expect(201)
 
         const blogsAtEnd = await blogsInDb()
