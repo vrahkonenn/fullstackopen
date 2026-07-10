@@ -34,10 +34,12 @@ blogRouter.post('/', middleware.userExtractor, async (request, response) => {
   })
 
   const savedBlog = await blog.save()
+
   user.blogs = user.blogs.concat(savedBlog._id)
   await user.save()
   
-  response.status(201).json(savedBlog)
+  const populatedBlog = await Blog.findById(savedBlog._id).populate('user', {username: 1, name: 1})
+  response.status(201).json(populatedBlog)
 })
 
 blogRouter.delete('/:id', middleware.userExtractor, async (request, response) => {
@@ -72,6 +74,24 @@ blogRouter.put('/:id', async (request, response) => {
   )
 
   response.json(updatedBlog)
+})
+
+blogRouter.put('/:id/like', async (request, response) => {
+  const blog = await Blog.findById(request.params.id)
+
+  const decodedToken = jwt.verify(request.token, process.env.SECRET)
+
+  if (!decodedToken.id) {
+        return response.status(401).json({ error: 'Token invalid or missing'})
+  }
+
+  if (!blog) return response.status(404).json({ error: 'blog not found'})
+    
+  blog.likes += 1
+  await blog.save()
+
+  const populatedBlog = await Blog.findById(request.params.id).populate('user', {username: 1, name: 1})
+  response.json(populatedBlog)  
 })
 
 module.exports = blogRouter
