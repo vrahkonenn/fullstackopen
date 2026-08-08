@@ -1,7 +1,14 @@
 import { useState } from 'react'
+import {
+  TextField,
+  Button,
+  Stack,
+  Typography,
+  Box,
+  Paper
+} from '@mui/material'
 
 const CreateBlogForm = ({ handleCreateBlog }) => {
-  // Blogin luonnin tilat
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
   const [url, setUrl] = useState('')
@@ -14,29 +21,55 @@ const CreateBlogForm = ({ handleCreateBlog }) => {
     setUrl('')
   }
 
-  return(
-    <form onSubmit={addBlog}>
-      <h2>Create new blog</h2>
-      <div>
-        <label>
-          Title:
-          <input type='text' value={title} onChange={({ target }) => setTitle(target.value)}/>
-        </label>
-      </div>
-      <div>
-        <label>
-          Author:
-          <input type='text' value={author} onChange={({ target }) => setAuthor(target.value)}/>
-        </label>
-      </div>
-      <div>
-        <label>
-          Url:
-          <input type='text' value={url} onChange={({ target }) => setUrl(target.value)}/>
-        </label>
-      </div>
-      <button type='submit' style={{ 'marginTop':10 }}>Create</button>
-    </form>
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        bgcolor: '#f3f4f6'
+      }}
+    >
+      <Paper
+        elevation={6}
+        sx={{
+          p: 4,
+          width: 420,
+          borderRadius: 3
+        }}
+      >
+        <form onSubmit={addBlog}>
+          <Stack spacing={2}>
+            <Typography variant="h5" align="center">
+              Create new blog
+            </Typography>
+
+            <TextField
+              label="Title"
+              value={title}
+              onChange={({ target }) => setTitle(target.value)}
+            />
+
+            <TextField
+              label="Author"
+              value={author}
+              onChange={({ target }) => setAuthor(target.value)}
+            />
+
+            <TextField
+              label="Url"
+              value={url}
+              onChange={({ target }) => setUrl(target.value)}
+            />
+
+            <Button type="submit" variant="contained">
+              Save
+            </Button>
+          </Stack>
+        </form>
+      </Paper>
+    </Box>
   )
 }
 
