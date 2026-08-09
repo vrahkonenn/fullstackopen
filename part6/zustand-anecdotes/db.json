@@ -1,0 +1,25 @@
+{
+  "anecdotes": [
+    {
+      "content": "If it hurts, do it more often",
+      "id": "47145",
+      "votes": 1
+    },
+    {
+      "content": "Premature optimization is the root of all evil.",
+      "id": "25170",
+      "votes": 2
+    },
+    {
+      "content": "Jääköhän tämä tietokantaan...",
+      "id": "LDPMlqGWBco",
+      "votes": 2
+    },
+    {
+      "content": "Kantaan uusi anekdootti",
+      "votes": 2,
+      "id": "QxbhwICxFQQ"
+    }
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
+}
